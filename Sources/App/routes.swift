@@ -2,7 +2,7 @@ import Fluent
 import Vapor
 
 func routes(_ app: Application) throws {
-    
+        
     // MARK: - Get
     app.get("movies") { req -> EventLoopFuture<[Movie]> in
         return Movie.query(on: req.db).with(\.$reviews).all()
@@ -18,6 +18,23 @@ func routes(_ app: Application) throws {
     app.post("movie",":movieId") { req -> EventLoopFuture<Movie> in
         Movie.find(req.parameters.get("movieId"), on: req.db)
             .unwrap(or: Abort(.notFound))
+    }
+    
+    app.post("actors") { req -> EventLoopFuture<Actor> in
+        let actor = try req.content.decode(Actor.self)
+        return actor.create(on: req.db).map { actor }
+    }
+    
+    app.post("movie", ":movieId", "actor", ":actorId") { req -> EventLoopFuture<HTTPStatus> in
+        let movie = Movie.find(req.parameters.get("movieId"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        
+        let actor = Actor.find(req.parameters.get("actorId"), on: req.db)
+            .unwrap(or: Abort(.notFound))
+        
+        return movie.and(actor).flatMap { (movie, actor) in
+            movie.$actors.attach(actor, on: req.db)
+        }.transform(to: .ok)
     }
     
     // MARK: - Put
@@ -42,7 +59,7 @@ func routes(_ app: Application) throws {
             }.transform(to: .ok)
     }
     
-    app.post("reviews") { req-> EventLoopFuture<Review> in
+    app.post("reviews") { req -> EventLoopFuture<Review> in
         let review  = try req.content.decode(Review.self)
         return review.create(on: req.db).map { review }
     }

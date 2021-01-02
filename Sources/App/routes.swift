@@ -5,9 +5,12 @@ func routes(_ app: Application) throws {
         
     // MARK: - Get
     app.get("movies") { req -> EventLoopFuture<[Movie]> in
-        return Movie.query(on: req.db).with(\.$reviews).all()
+        return Movie.query(on: req.db).with(\.$actors) .with(\.$reviews).all()
     }
     
+    app.get("actors") { req -> EventLoopFuture<[Actor]> in
+        return Actor.query(on: req.db).with(\.$movies).all()
+    }
     // MARK: - Post
     app.post("movie") { req -> EventLoopFuture<Movie> in
         let movie = try req.content.decode(Movie.self)

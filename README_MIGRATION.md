@@ -8,4 +8,4 @@
 `app.migrations.add("your struct")`
 
 ## Step 3: Open terminal and run command
-``` vapor run migrate
+```vapor run migrate```
